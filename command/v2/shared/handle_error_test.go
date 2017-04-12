@@ -63,6 +63,10 @@ var _ = Describe("HandleError", func() {
 			v2action.OrganizationNotFoundError{Name: "some-org"},
 			OrganizationNotFoundError{Name: "some-org"}),
 
+		Entry("v2action.PluginNotFoundError -> PluginNotFoundError",
+			v2action.PluginNotFoundError{Name: "some-plugin"},
+			PluginNotFoundError{Name: "some-plugin"}),
+
 		Entry("v2action.SpaceNotFoundError -> SpaceNotFoundError",
 			v2action.SpaceNotFoundError{Name: "some-space"},
 			SpaceNotFoundError{Name: "some-space"}),
