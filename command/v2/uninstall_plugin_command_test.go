@@ -1,11 +1,12 @@
 package v2_test
 
 import (
-	"code.cloudfoundry.org/cli/actor/v2action"
+	"errors"
+
+	"code.cloudfoundry.org/cli/actor/sharedaction"
 	"code.cloudfoundry.org/cli/command/commandfakes"
 	. "code.cloudfoundry.org/cli/command/v2"
 	"code.cloudfoundry.org/cli/command/v2/shared"
-	"code.cloudfoundry.org/cli/command/v2/v2fakes"
 	"code.cloudfoundry.org/cli/util/ui"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,22 +15,22 @@ import (
 
 var _ = Describe("uninstall-plugin command", func() {
 	var (
-		cmd        UninstallPluginCommand
-		testUI     *ui.UI
-		fakeConfig *commandfakes.FakeConfig
-		fakeActor  *v2fakes.FakeUninstallPluginActor
-		executeErr error
+		cmd             UninstallPluginCommand
+		testUI          *ui.UI
+		fakeConfig      *commandfakes.FakeConfig
+		fakeSharedActor *commandfakes.FakeSharedActor
+		executeErr      error
 	)
 
 	BeforeEach(func() {
 		testUI = ui.NewTestUI(nil, NewBuffer(), NewBuffer())
 		fakeConfig = new(commandfakes.FakeConfig)
-		fakeActor = new(v2fakes.FakeUninstallPluginActor)
+		fakeSharedActor = new(commandfakes.FakeSharedActor)
 
 		cmd = UninstallPluginCommand{
-			UI:     testUI,
-			Config: fakeConfig,
-			Actor:  fakeActor,
+			UI:          testUI,
+			Config:      fakeConfig,
+			SharedActor: fakeSharedActor,
 		}
 
 		cmd.RequiredArgs.PluginName = "some-plugin"
@@ -40,28 +41,52 @@ var _ = Describe("uninstall-plugin command", func() {
 	})
 
 	Context("when the plugin is installed", func() {
-	})
-
-	Context("when the plugin is not installed", func() {
 		BeforeEach(func() {
-			fakeActor.UninstallPluginReturns(
-				v2action.Warnings{"warning-1", "warning-2"},
-				v2action.PluginNotFoundError{
-					Name: "some-plugin",
-				},
-			)
+			fakeSharedActor.UninstallPluginReturns(nil)
 		})
 
-		It("outputs warnings and returns an error", func() {
+		It("outputs warnings and a success message", func() {
+			Expect(executeErr).ToNot(HaveOccurred())
 			Expect(testUI.Out).To(Say("Uninstalling plugin some-plugin..."))
-			Expect(testUI.Err).To(Say("warning-1"))
-			Expect(testUI.Err).To(Say("warning-2"))
-			Expect(executeErr).To(MatchError(shared.PluginNotFoundError{
-				Name: "some-plugin",
-			}))
+
+			Expect(testUI.Out).To(Say("Plugin some-plugin successfully uninstalled."))
+
+			Expect(fakeSharedActor.UninstallPluginCallCount()).To(Equal(1))
+			config, _, pluginName := fakeSharedActor.UninstallPluginArgsForCall(0)
+			Expect(config).To(Equal(fakeConfig))
+			Expect(pluginName).To(Equal("some-plugin"))
 		})
 	})
 
-	Context("when the actor returns an error", func() {
+	Context("Errors", func() {
+		Context("when the plugin is not installed", func() {
+			BeforeEach(func() {
+				fakeSharedActor.UninstallPluginReturns(
+					sharedaction.PluginNotFoundError{
+						Name: "some-plugin",
+					},
+				)
+			})
+
+			It("returns an error", func() {
+				Expect(testUI.Out).To(Say("Uninstalling plugin some-plugin..."))
+				Expect(executeErr).To(MatchError(shared.PluginNotFoundError{
+					Name: "some-plugin",
+				}))
+			})
+		})
+
+		Context("when the actor returns a different error", func() {
+			var expectedErr error
+
+			BeforeEach(func() {
+				expectedErr = errors.New("some error")
+				fakeSharedActor.UninstallPluginReturns(expectedErr)
+			})
+
+			It("returns the error", func() {
+				Expect(executeErr).To(MatchError(expectedErr))
+			})
+		})
 	})
 })

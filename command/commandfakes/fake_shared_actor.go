@@ -22,6 +22,19 @@ type FakeSharedActor struct {
 	checkTargetReturnsOnCall map[int]struct {
 		result1 error
 	}
+	UninstallPluginStub        func(config sharedaction.Config, uninstaller sharedaction.PluginUninstaller, name string) error
+	uninstallPluginMutex       sync.RWMutex
+	uninstallPluginArgsForCall []struct {
+		config      sharedaction.Config
+		uninstaller sharedaction.PluginUninstaller
+		name        string
+	}
+	uninstallPluginReturns struct {
+		result1 error
+	}
+	uninstallPluginReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -76,11 +89,63 @@ func (fake *FakeSharedActor) CheckTargetReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeSharedActor) UninstallPlugin(config sharedaction.Config, uninstaller sharedaction.PluginUninstaller, name string) error {
+	fake.uninstallPluginMutex.Lock()
+	ret, specificReturn := fake.uninstallPluginReturnsOnCall[len(fake.uninstallPluginArgsForCall)]
+	fake.uninstallPluginArgsForCall = append(fake.uninstallPluginArgsForCall, struct {
+		config      sharedaction.Config
+		uninstaller sharedaction.PluginUninstaller
+		name        string
+	}{config, uninstaller, name})
+	fake.recordInvocation("UninstallPlugin", []interface{}{config, uninstaller, name})
+	fake.uninstallPluginMutex.Unlock()
+	if fake.UninstallPluginStub != nil {
+		return fake.UninstallPluginStub(config, uninstaller, name)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.uninstallPluginReturns.result1
+}
+
+func (fake *FakeSharedActor) UninstallPluginCallCount() int {
+	fake.uninstallPluginMutex.RLock()
+	defer fake.uninstallPluginMutex.RUnlock()
+	return len(fake.uninstallPluginArgsForCall)
+}
+
+func (fake *FakeSharedActor) UninstallPluginArgsForCall(i int) (sharedaction.Config, sharedaction.PluginUninstaller, string) {
+	fake.uninstallPluginMutex.RLock()
+	defer fake.uninstallPluginMutex.RUnlock()
+	return fake.uninstallPluginArgsForCall[i].config, fake.uninstallPluginArgsForCall[i].uninstaller, fake.uninstallPluginArgsForCall[i].name
+}
+
+func (fake *FakeSharedActor) UninstallPluginReturns(result1 error) {
+	fake.UninstallPluginStub = nil
+	fake.uninstallPluginReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeSharedActor) UninstallPluginReturnsOnCall(i int, result1 error) {
+	fake.UninstallPluginStub = nil
+	if fake.uninstallPluginReturnsOnCall == nil {
+		fake.uninstallPluginReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.uninstallPluginReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeSharedActor) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.checkTargetMutex.RLock()
 	defer fake.checkTargetMutex.RUnlock()
+	fake.uninstallPluginMutex.RLock()
+	defer fake.uninstallPluginMutex.RUnlock()
 	return fake.invocations
 }
 

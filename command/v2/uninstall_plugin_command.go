@@ -1,30 +1,27 @@
 package v2
 
 import (
-	"code.cloudfoundry.org/cli/actor/v2action"
+	"code.cloudfoundry.org/cli/actor/sharedaction"
 	"code.cloudfoundry.org/cli/command"
 	"code.cloudfoundry.org/cli/command/flag"
 	"code.cloudfoundry.org/cli/command/v2/shared"
 )
-
-//go:generate counterfeiter . UninstallPluginActor
-type UninstallPluginActor interface {
-	UninstallPlugin(name string) (v2action.Warnings, error)
-}
 
 type UninstallPluginCommand struct {
 	RequiredArgs    flag.PluginName `positional-args:"yes"`
 	usage           interface{}     `usage:"CF_NAME uninstall-plugin PLUGIN-NAME"`
 	relatedCommands interface{}     `related_commands:"plugins"`
 
-	Config command.Config
-	UI     command.UI
-	Actor  UninstallPluginActor
+	Config      command.Config
+	UI          command.UI
+	SharedActor command.SharedActor
 }
 
 func (cmd *UninstallPluginCommand) Setup(config command.Config, ui command.UI) error {
 	cmd.Config = config
 	cmd.UI = ui
+
+	cmd.SharedActor = sharedaction.NewActor()
 
 	return nil
 }
@@ -35,8 +32,17 @@ func (cmd UninstallPluginCommand) Execute(args []string) error {
 			"PluginName": cmd.RequiredArgs.PluginName,
 		})
 
-	warnings, err := cmd.Actor.UninstallPlugin(cmd.RequiredArgs.PluginName)
-	cmd.UI.DisplayWarnings(warnings)
+	pluginUninstaller := shared.NewPluginUninstaller(cmd.Config, cmd.UI)
+	err := cmd.SharedActor.UninstallPlugin(cmd.Config, pluginUninstaller, cmd.RequiredArgs.PluginName)
 
-	return shared.HandleError(err)
+	if err != nil {
+		return shared.HandleError(err)
+	}
+
+	cmd.UI.DisplayText("Plugin {{.PluginName}} successfully uninstalled.",
+		map[string]interface{}{
+			"PluginName": cmd.RequiredArgs.PluginName,
+		})
+
+	return nil
 }

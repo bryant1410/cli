@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cli/actor/sharedaction"
+	"code.cloudfoundry.org/cli/util/configv3"
 )
 
 type FakeConfig struct {
@@ -44,6 +45,24 @@ type FakeConfig struct {
 	hasTargetedSpaceReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	PluginHomeStub        func() string
+	pluginHomeMutex       sync.RWMutex
+	pluginHomeArgsForCall []struct{}
+	pluginHomeReturns     struct {
+		result1 string
+	}
+	pluginHomeReturnsOnCall map[int]struct {
+		result1 string
+	}
+	PluginsStub        func() map[string]configv3.Plugin
+	pluginsMutex       sync.RWMutex
+	pluginsArgsForCall []struct{}
+	pluginsReturns     struct {
+		result1 map[string]configv3.Plugin
+	}
+	pluginsReturnsOnCall map[int]struct {
+		result1 map[string]configv3.Plugin
+	}
 	RefreshTokenStub        func() string
 	refreshTokenMutex       sync.RWMutex
 	refreshTokenArgsForCall []struct{}
@@ -52,6 +71,11 @@ type FakeConfig struct {
 	}
 	refreshTokenReturnsOnCall map[int]struct {
 		result1 string
+	}
+	RemovePluginStub        func(string)
+	removePluginMutex       sync.RWMutex
+	removePluginArgsForCall []struct {
+		arg1 string
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -217,6 +241,86 @@ func (fake *FakeConfig) HasTargetedSpaceReturnsOnCall(i int, result1 bool) {
 	}{result1}
 }
 
+func (fake *FakeConfig) PluginHome() string {
+	fake.pluginHomeMutex.Lock()
+	ret, specificReturn := fake.pluginHomeReturnsOnCall[len(fake.pluginHomeArgsForCall)]
+	fake.pluginHomeArgsForCall = append(fake.pluginHomeArgsForCall, struct{}{})
+	fake.recordInvocation("PluginHome", []interface{}{})
+	fake.pluginHomeMutex.Unlock()
+	if fake.PluginHomeStub != nil {
+		return fake.PluginHomeStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.pluginHomeReturns.result1
+}
+
+func (fake *FakeConfig) PluginHomeCallCount() int {
+	fake.pluginHomeMutex.RLock()
+	defer fake.pluginHomeMutex.RUnlock()
+	return len(fake.pluginHomeArgsForCall)
+}
+
+func (fake *FakeConfig) PluginHomeReturns(result1 string) {
+	fake.PluginHomeStub = nil
+	fake.pluginHomeReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakeConfig) PluginHomeReturnsOnCall(i int, result1 string) {
+	fake.PluginHomeStub = nil
+	if fake.pluginHomeReturnsOnCall == nil {
+		fake.pluginHomeReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.pluginHomeReturnsOnCall[i] = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *FakeConfig) Plugins() map[string]configv3.Plugin {
+	fake.pluginsMutex.Lock()
+	ret, specificReturn := fake.pluginsReturnsOnCall[len(fake.pluginsArgsForCall)]
+	fake.pluginsArgsForCall = append(fake.pluginsArgsForCall, struct{}{})
+	fake.recordInvocation("Plugins", []interface{}{})
+	fake.pluginsMutex.Unlock()
+	if fake.PluginsStub != nil {
+		return fake.PluginsStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.pluginsReturns.result1
+}
+
+func (fake *FakeConfig) PluginsCallCount() int {
+	fake.pluginsMutex.RLock()
+	defer fake.pluginsMutex.RUnlock()
+	return len(fake.pluginsArgsForCall)
+}
+
+func (fake *FakeConfig) PluginsReturns(result1 map[string]configv3.Plugin) {
+	fake.PluginsStub = nil
+	fake.pluginsReturns = struct {
+		result1 map[string]configv3.Plugin
+	}{result1}
+}
+
+func (fake *FakeConfig) PluginsReturnsOnCall(i int, result1 map[string]configv3.Plugin) {
+	fake.PluginsStub = nil
+	if fake.pluginsReturnsOnCall == nil {
+		fake.pluginsReturnsOnCall = make(map[int]struct {
+			result1 map[string]configv3.Plugin
+		})
+	}
+	fake.pluginsReturnsOnCall[i] = struct {
+		result1 map[string]configv3.Plugin
+	}{result1}
+}
+
 func (fake *FakeConfig) RefreshToken() string {
 	fake.refreshTokenMutex.Lock()
 	ret, specificReturn := fake.refreshTokenReturnsOnCall[len(fake.refreshTokenArgsForCall)]
@@ -257,6 +361,30 @@ func (fake *FakeConfig) RefreshTokenReturnsOnCall(i int, result1 string) {
 	}{result1}
 }
 
+func (fake *FakeConfig) RemovePlugin(arg1 string) {
+	fake.removePluginMutex.Lock()
+	fake.removePluginArgsForCall = append(fake.removePluginArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("RemovePlugin", []interface{}{arg1})
+	fake.removePluginMutex.Unlock()
+	if fake.RemovePluginStub != nil {
+		fake.RemovePluginStub(arg1)
+	}
+}
+
+func (fake *FakeConfig) RemovePluginCallCount() int {
+	fake.removePluginMutex.RLock()
+	defer fake.removePluginMutex.RUnlock()
+	return len(fake.removePluginArgsForCall)
+}
+
+func (fake *FakeConfig) RemovePluginArgsForCall(i int) string {
+	fake.removePluginMutex.RLock()
+	defer fake.removePluginMutex.RUnlock()
+	return fake.removePluginArgsForCall[i].arg1
+}
+
 func (fake *FakeConfig) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -268,8 +396,14 @@ func (fake *FakeConfig) Invocations() map[string][][]interface{} {
 	defer fake.hasTargetedOrganizationMutex.RUnlock()
 	fake.hasTargetedSpaceMutex.RLock()
 	defer fake.hasTargetedSpaceMutex.RUnlock()
+	fake.pluginHomeMutex.RLock()
+	defer fake.pluginHomeMutex.RUnlock()
+	fake.pluginsMutex.RLock()
+	defer fake.pluginsMutex.RUnlock()
 	fake.refreshTokenMutex.RLock()
 	defer fake.refreshTokenMutex.RUnlock()
+	fake.removePluginMutex.RLock()
+	defer fake.removePluginMutex.RUnlock()
 	return fake.invocations
 }
 
